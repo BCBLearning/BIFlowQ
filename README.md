@@ -10,7 +10,7 @@
 [![Qubic Hackathon](https://img.shields.io/badge/Qubic-Hackathon-blue.svg)](https://lablab.ai/event/qubic-hack-the-future)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org)
-[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen.svg)](https://your-codesandbox-url.csb.app)
+[![Live Demo](https://img.shields.io/badge/Demo-Live-brightgreen.svg)]([https://your-codesandbox-url.csb.app](https://8x425h-3000.csb.app/))
 
 *Multi-Agent AI Platform Leveraging Qubic's Decentralized Computational Power*
 
@@ -86,7 +86,7 @@ Built specifically for the **Qubic Hack The Future** hackathon, BIFlowQ demonstr
 ### Installation & Running
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/BIFlowQ.git
+git clone https://github.com/BCBLearning/BIFlowQ.git
 cd BIFlowQ
 
 # Install dependencies
@@ -155,7 +155,7 @@ npm run start:real
 📥 Installation
 Method 1: Local Development
 bash
-git clone https://github.com/your-username/BIFlowQ.git
+git clone https://github.com/BCBLearning/BIFlowQ.git
 cd BIFlowQ
 npm install
 npm start
@@ -266,12 +266,12 @@ npm scripts - Build and deployment automation
 👥 Team
 Core Contributors
 Role	Name	Contributions
-Lead Developer	[Your Name]	Full-stack development, Architecture, Qubic integration
+Lead Developer	BesmaInfo	Full-stack development, Architecture, Qubic integration
 AI Specialist	[Your Name]	Agent algorithms, Market analysis, Trading logic
 Contact Information
-Email: your.email@domain.com
+Email: bouchareb.learning@google.com
 
-GitHub: @your-username
+GitHub: @BCBLearning
 
 Project Repository: BIFlowQ GitHub
 
@@ -281,7 +281,7 @@ We welcome contributions from the community!
 Development Setup
 bash
 # Fork and clone
-git clone https://github.com/your-username/BIFlowQ.git
+git clone https://github.com/BCBLearning/BIFlowQ.git
 cd BIFlowQ
 
 # Install dependencies
