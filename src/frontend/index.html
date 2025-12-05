@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BIFlowQ - AI Agent Platform</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/svg+xml" href="/assets/icon-biflowq.svg" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="logo-container">
+          <img src="/assets/logo-biflowq.svg" alt="BIFlowQ Logo" class="logo" />
+          <div class="header-text">
+            <h1>BIFlowQ</h1>
+            <p>AI Agent Platform for Qubic Ecosystem</p>
+            <div class="mode-selector">
+              <div class="mode-buttons">
+                <button
+                  id="prototype-mode-btn"
+                  class="mode-btn prototype active"
+                >
+                  <span class="mode-icon">🔧</span>
+                  Prototype Mode
+                  <span class="mode-badge">Simulated Data</span>
+                </button>
+                <button id="real-mode-btn" class="mode-btn real">
+                  <span class="mode-icon">⛓️</span>
+                  Real Mode
+                  <span class="mode-badge">Live Qubic Network</span>
+                </button>
+              </div>
+              <div class="mode-status">
+                <span id="current-mode-display">Current: Prototype Mode</span>
+                <span id="mode-config-status" class="config-status"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="dashboard">
+        <div class="agent-selector">
+          <h3>🧠 Select AI Agent</h3>
+          <div class="agent-buttons">
+            <!-- Dynamically loaded -->
+          </div>
+        </div>
+
+        <div class="action-panel">
+          <h3>⚡ Agent Actions</h3>
+          <div id="action-buttons">
+            <!-- Dynamically loaded -->
+          </div>
+        </div>
+
+        <div class="parameters-panel">
+          <h3>🔧 Parameters</h3>
+          <textarea
+            id="parameters-input"
+            placeholder='{"market": "QUBIC", "timeframe": "24h"}'
+          ></textarea>
+          <div class="parameters-examples">
+            <small>Try: {"market": "QUBIC"} or {"pair": "QUBIC/USDT"}</small>
+          </div>
+        </div>
+
+        <div class="execute-panel">
+          <button id="execute-btn">🚀 Execute Agent Action</button>
+        </div>
+
+        <div class="results-panel">
+          <h3>📈 Results</h3>
+          <div id="results-display">
+            <p class="placeholder">
+              Select an agent and action to see results...
+            </p>
+          </div>
+        </div>
+
+        <div class="status-panel">
+          <div class="status-info">
+            <div id="connection-status" class="status connected">
+              🟢 Connecting...
+            </div>
+            <div id="last-update">Last update: --</div>
+          </div>
+          <div class="qubic-badge">
+            <span>Powered by Qubic</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
 
