@@ -1,7 +1,7 @@
 class BIFlowQApp {
   constructor() {
     this.socket = null;
-    this.currentAgent = "analytics";
+    this.currentAgent = null;
     this.currentAction = null;
     this.isConnected = false;
     this.currentMode = "prototype";
@@ -29,9 +29,14 @@ class BIFlowQApp {
 
     this.socket.on("config-update", (config) => {
       console.log("⚙️ Received configuration:", config);
-      this.currentMode = config.mode;
-      this.agentsMetadata = config.agents;
+      this.currentMode = config.mode || "prototype";
+      this.agentsMetadata = config.agents || {};
       this.updateUIMode();
+
+      // Définir l’agent courant par défaut
+      const agentIds = Object.keys(this.agentsMetadata);
+      this.currentAgent = agentIds.length ? agentIds[0] : null;
+
       this.loadAgentButtons();
     });
 
@@ -52,7 +57,6 @@ class BIFlowQApp {
     this.socket.on("mode-change-error", (data) => {
       console.error("❌ Mode change failed:", data.error);
       this.showError(data.error);
-      // Revenir au mode précédent
       this.updateModeButtons(this.currentMode);
     });
 
@@ -68,20 +72,22 @@ class BIFlowQApp {
 
   setupEventListeners() {
     // Boutons de mode
-    document
-      .getElementById("prototype-mode-btn")
-      .addEventListener("click", () => {
-        this.changeMode("prototype");
-      });
-
-    document.getElementById("real-mode-btn").addEventListener("click", () => {
-      this.changeMode("real");
-    });
+    const prototypeBtn = document.getElementById("prototype-mode-btn");
+    const realBtn = document.getElementById("real-mode-btn");
+    if (prototypeBtn) {
+      prototypeBtn.addEventListener("click", () =>
+        this.changeMode("prototype")
+      );
+    }
+    if (realBtn) {
+      realBtn.addEventListener("click", () => this.changeMode("real"));
+    }
 
     // Bouton d'exécution
-    document.getElementById("execute-btn").addEventListener("click", () => {
-      this.executeAgentAction();
-    });
+    const executeBtn = document.getElementById("execute-btn");
+    if (executeBtn) {
+      executeBtn.addEventListener("click", () => this.executeAgentAction());
+    }
   }
 
   changeMode(newMode) {
@@ -89,109 +95,60 @@ class BIFlowQApp {
       console.log(`ℹ️ Already in ${newMode} mode`);
       return;
     }
-
     console.log(`🔄 Requesting mode change to: ${newMode}`);
-
-    // Afficher un indicateur de chargement
     this.showLoading(`Switching to ${newMode} mode...`);
-
-    // Désactiver les boutons pendant le changement
     this.setModeButtonsEnabled(false);
-
-    // Envoyer la demande de changement de mode au serveur
     this.socket.emit("change-mode", { mode: newMode });
   }
 
   setModeButtonsEnabled(enabled) {
     const prototypeBtn = document.getElementById("prototype-mode-btn");
     const realBtn = document.getElementById("real-mode-btn");
-
-    if (prototypeBtn && realBtn) {
-      prototypeBtn.disabled = !enabled;
-      realBtn.disabled = !enabled;
-
-      if (!enabled) {
-        prototypeBtn.style.opacity = "0.6";
-        realBtn.style.opacity = "0.6";
-      } else {
-        prototypeBtn.style.opacity = "1";
-        realBtn.style.opacity = "1";
+    [prototypeBtn, realBtn].forEach((btn) => {
+      if (btn) {
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? "1" : "0.6";
       }
-    }
+    });
   }
 
   updateModeButtons(activeMode) {
     const prototypeBtn = document.getElementById("prototype-mode-btn");
     const realBtn = document.getElementById("real-mode-btn");
-
     if (!prototypeBtn || !realBtn) return;
 
-    // Réactiver les boutons
     this.setModeButtonsEnabled(true);
-
-    // Mettre à jour les styles actifs
     prototypeBtn.classList.remove("active");
     realBtn.classList.remove("active");
 
-    if (activeMode === "prototype") {
-      prototypeBtn.classList.add("active");
-    } else {
-      realBtn.classList.add("active");
-    }
+    if (activeMode === "prototype") prototypeBtn.classList.add("active");
+    else realBtn.classList.add("active");
   }
 
   checkServerMode() {
-    // Récupérer le mode actuel du serveur
     fetch("/api/mode")
-      .then((response) => response.json())
+      .then((res) => res.json())
       .then((data) => {
         console.log("📡 Server mode:", data.mode);
-        this.currentMode = data.mode;
+        this.currentMode = data.mode || "prototype";
         this.updateUIMode();
-        this.updateConfigStatus(data.config);
       })
-      .catch((error) => {
-        console.error("Failed to get server mode:", error);
-      });
-  }
-
-  updateConfigStatus(config) {
-    const statusElement = document.getElementById("mode-config-status");
-    if (!statusElement) return;
-
-    if (this.currentMode === "real") {
-      if (config && config.hasPrivateKey && config.hasContract) {
-        statusElement.textContent = "✅ Configuration OK";
-        statusElement.className = "config-status valid";
-      } else {
-        statusElement.textContent = "⚠️ Configuration needed";
-        statusElement.className = "config-status warning";
-      }
-    } else {
-      statusElement.textContent = "🔧 Using simulated data";
-      statusElement.className = "config-status info";
-    }
+      .catch((err) => console.error("Failed to get server mode:", err));
   }
 
   updateUIMode() {
-    // Mettre à jour la classe du body
     document.body.className = this.currentMode + "-mode";
-
-    // Mettre à jour les boutons de mode
     this.updateModeButtons(this.currentMode);
 
-    // Mettre à jour l'affichage du mode actuel
     const modeDisplay = document.getElementById("current-mode-display");
     if (modeDisplay) {
-      modeDisplay.textContent = `Current: ${
-        this.currentMode === "real" ? "Real Mode ⛓️" : "Prototype Mode 🔧"
-      }`;
+      modeDisplay.textContent =
+        this.currentMode === "real"
+          ? "Current: Real Mode ⛓️"
+          : "Current: Prototype Mode 🔧";
     }
 
-    // Mettre à jour le badge de mode
     this.updateModeBadge();
-
-    console.log(`🎨 UI updated for ${this.currentMode} mode`);
   }
 
   updateModeBadge() {
@@ -202,27 +159,24 @@ class BIFlowQApp {
       document.body.appendChild(badge);
     }
 
-    if (this.currentMode === "real") {
-      badge.textContent = "⛓️ REAL MODE - Live Qubic Network";
-      badge.style.background = "#27ae60";
-    } else {
-      badge.textContent = "🔧 PROTOTYPE MODE - Simulated Data";
-      badge.style.background = "#667eea";
-    }
+    badge.textContent =
+      this.currentMode === "real"
+        ? "⛓️ REAL MODE - Live Qubic Network"
+        : "🔧 PROTOTYPE MODE - Simulated Data";
 
     badge.style.cssText = `
-          position: fixed;
-          top: 10px;
-          right: 10px;
-          padding: 8px 12px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: bold;
-          z-index: 1000;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-          color: white;
-          background: ${this.currentMode === "real" ? "#27ae60" : "#667eea"};
-      `;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      color: white;
+      background: ${this.currentMode === "real" ? "#27ae60" : "#667eea"};
+    `;
   }
 
   loadAgentButtons() {
@@ -231,50 +185,48 @@ class BIFlowQApp {
 
     agentButtonsContainer.innerHTML = "";
 
+    if (!this.agentsMetadata || Object.keys(this.agentsMetadata).length === 0) {
+      agentButtonsContainer.innerHTML = "<p>No agents available</p>";
+      return;
+    }
+
     Object.entries(this.agentsMetadata).forEach(([agentId, agentMeta]) => {
       const button = document.createElement("button");
       button.className = `agent-btn ${
         this.currentAgent === agentId ? "active" : ""
       }`;
       button.innerHTML = `
-              <span class="agent-icon">${agentMeta.icon}</span>
-              <div class="agent-info">
-                  <div class="agent-name">${agentMeta.name}</div>
-                  <div class="agent-desc">${agentMeta.description}</div>
-              </div>
-          `;
+        <span class="agent-icon">${agentMeta.icon}</span>
+        <div class="agent-info">
+          <div class="agent-name">${agentMeta.name}</div>
+          <div class="agent-desc">${agentMeta.description}</div>
+        </div>
+      `;
       button.dataset.agent = agentId;
-
-      button.addEventListener("click", () => {
-        this.selectAgent(agentId);
-      });
-
+      button.addEventListener("click", () => this.selectAgent(agentId));
       agentButtonsContainer.appendChild(button);
     });
 
-    // Load actions for default agent
-    this.loadAgentActions(this.currentAgent);
+    if (this.currentAgent) this.loadAgentActions(this.currentAgent);
   }
 
   selectAgent(agentId) {
     this.currentAgent = agentId;
-
-    document.querySelectorAll(".agent-btn").forEach((btn) => {
-      btn.classList.remove("active");
-    });
+    document
+      .querySelectorAll(".agent-btn")
+      .forEach((btn) => btn.classList.remove("active"));
     const activeBtn = document.querySelector(`[data-agent="${agentId}"]`);
-    if (activeBtn) {
-      activeBtn.classList.add("active");
-    }
+    if (activeBtn) activeBtn.classList.add("active");
 
     this.loadAgentActions(agentId);
   }
 
   loadAgentActions(agentId) {
     const actionButtonsContainer = document.getElementById("action-buttons");
-    const agentMeta = this.agentsMetadata[agentId];
+    if (!actionButtonsContainer) return;
 
-    if (!agentMeta || !actionButtonsContainer) return;
+    const agentMeta = this.agentsMetadata[agentId];
+    if (!agentMeta || !agentMeta.availableActions) return;
 
     actionButtonsContainer.innerHTML = "";
 
@@ -283,11 +235,7 @@ class BIFlowQApp {
       button.className = "action-btn";
       button.textContent = this.formatActionName(action);
       button.dataset.action = action;
-
-      button.addEventListener("click", () => {
-        this.selectAction(action);
-      });
-
+      button.addEventListener("click", () => this.selectAction(action));
       actionButtonsContainer.appendChild(button);
     });
 
@@ -298,20 +246,17 @@ class BIFlowQApp {
 
   selectAction(action) {
     this.currentAction = action;
-
-    document.querySelectorAll(".action-btn").forEach((btn) => {
-      btn.classList.remove("active");
-    });
+    document
+      .querySelectorAll(".action-btn")
+      .forEach((btn) => btn.classList.remove("active"));
     const activeBtn = document.querySelector(`[data-action="${action}"]`);
-    if (activeBtn) {
-      activeBtn.classList.add("active");
-    }
+    if (activeBtn) activeBtn.classList.add("active");
   }
 
   formatActionName(action) {
     return action
       .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
   }
 
@@ -322,32 +267,23 @@ class BIFlowQApp {
     }
 
     const parametersInput = document.getElementById("parameters-input");
-    if (!parametersInput) {
-      this.showError("Parameters input not found");
-      return;
-    }
-
-    const parametersText = parametersInput.value;
     let parameters = {};
-
     try {
-      if (parametersText.trim()) {
-        parameters = JSON.parse(parametersText);
+      if (parametersInput && parametersInput.value.trim()) {
+        parameters = JSON.parse(parametersInput.value);
       }
-    } catch (e) {
+    } catch {
       this.showError("Invalid JSON parameters");
       return;
     }
 
-    const requestData = {
+    this.showLoading("Executing agent action...");
+    this.socket.emit("agent-request", {
       agentType: this.currentAgent,
       action: this.currentAction,
-      parameters: parameters,
+      parameters,
       requestId: "req_" + Date.now(),
-    };
-
-    this.showLoading("Executing agent action...");
-    this.socket.emit("agent-request", requestData);
+    });
   }
 
   handleAgentResponse(response) {
@@ -359,12 +295,9 @@ class BIFlowQApp {
     }
 
     if (resultsDisplay) {
-      if (response.success) {
+      if (response.success)
         resultsDisplay.textContent = JSON.stringify(response.data, null, 2);
-      } else {
-        resultsDisplay.textContent = `Error: ${response.error}`;
-        this.showError(response.error);
-      }
+      else resultsDisplay.textContent = `Error: ${response.error}`;
     }
   }
 
@@ -374,55 +307,44 @@ class BIFlowQApp {
     const executeBtn = document.getElementById("execute-btn");
 
     if (statusElement) {
-      if (connected) {
-        statusElement.textContent = "🟢 Connected to BIFlowQ";
-        statusElement.className = "status connected";
-      } else {
-        statusElement.textContent = "🔴 Disconnected";
-        statusElement.className = "status disconnected";
-      }
+      statusElement.textContent = connected
+        ? "🟢 Connected to BIFlowQ"
+        : "🔴 Disconnected";
+      statusElement.className = connected
+        ? "status connected"
+        : "status disconnected";
     }
-
-    if (executeBtn) {
-      executeBtn.disabled = !connected;
-    }
+    if (executeBtn) executeBtn.disabled = !connected;
   }
 
   showLoading(message) {
     const resultsDisplay = document.getElementById("results-display");
     if (resultsDisplay) {
       resultsDisplay.innerHTML = `
-              <div class="loading-container">
-                  <div class="loading-spinner"></div>
-                  <div class="loading-text">${message}</div>
-              </div>
-          `;
+        <div class="loading-container">
+          <div class="loading-spinner"></div>
+          <div class="loading-text">${message}</div>
+        </div>
+      `;
     }
   }
 
   showNotification(message) {
-    console.log("💡", message);
-    // Créer une notification temporaire
     const notification = document.createElement("div");
     notification.textContent = message;
     notification.style.cssText = `
-          position: fixed;
-          top: 50px;
-          right: 10px;
-          padding: 10px 15px;
-          background: #3498db;
-          color: white;
-          border-radius: 5px;
-          z-index: 1000;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-      `;
+      position: fixed;
+      top: 50px;
+      right: 10px;
+      padding: 10px 15px;
+      background: #3498db;
+      color: white;
+      border-radius: 5px;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    `;
     document.body.appendChild(notification);
-
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        document.body.removeChild(notification);
-      }
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
   }
 
   showError(message) {
@@ -440,4 +362,3 @@ class BIFlowQApp {
 document.addEventListener("DOMContentLoaded", () => {
   new BIFlowQApp();
 });
-
